@@ -2,6 +2,9 @@ import streamlit as st
 import serial_dilution_package as sd
 import pandas as pd
 
+# page configs
+st.set_page_config(page_title="Serial dilution calculator")
+
 st.title('Serial dilution calculator')
 
 st.write("This tool automates serial dilution calculation. ")

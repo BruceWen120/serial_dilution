@@ -7,6 +7,7 @@ def parse_args():
     parser.add_argument("file_path", type=str, help="path to the input csv file")
     parser.add_argument("--minimal_volume", default=2, type=float, help="the minimal volume for the pipette")
     parser.add_argument("--leaway_factor", default=1.5, type=float, help="factor by which the volumes are expanded to provide leaway")
+    parser.add_argument("--no_file_saving", action="store_true", help="results not saved to file")
     return parser.parse_args()
 
 def check_stock_solution(idx_to_concentration, idx_to_volume, vmin):
@@ -30,7 +31,8 @@ def check_stock_solution(idx_to_concentration, idx_to_volume, vmin):
     else:
         # need multiple stock solutions to dilute from
         # see if two can cover all
-        raise Exception("one stock solution is not able to cover all the ranges")
+        # raise Exception("one stock solution is not able to cover all the ranges")
+        pass
 
 if __name__ == "__main__":
     args = parse_args()
@@ -59,28 +61,30 @@ if __name__ == "__main__":
     v_buffer_dict = {}
 
     for j in range(request_df.shape[0] - 1, 0, -1):
-        if (idx_to_volume[j] / (idx_to_volume[j] - args.minimal_volume)) * idx_to_concentration[j] > idx_to_concentration[0]:
+        if (idx_to_volume[j] / (idx_to_volume[j] - args.minimal_volume)) * idx_to_concentration[j] \
+            > idx_to_concentration[0]:
             # j's concentration too large, fail
-            raise Exception(f"concentration at {j}-th row is too large ({idx_to_concentration[j]})")
+            raise Exception(f"concentration request {idx_to_concentration[j]} is too large to be diluted from the original stock solution")
         elif (idx_to_volume[j] / args.minimal_volume) * idx_to_concentration[j] < idx_to_concentration[0]:
             # j's concentration too small for the original stock solution, search for newer ones
+            succeed = False
+            lower_bound = (idx_to_volume[j] / (idx_to_volume[j] - args.minimal_volume)) * idx_to_concentration[j]
+            upper_bound = (idx_to_volume[j] / args.minimal_volume) * idx_to_concentration[j]
             for i in range(1, j):
-                if (idx_to_volume[j] / (idx_to_volume[j] - args.minimal_volume)) * idx_to_concentration[j] \
-                    > idx_to_concentration[i]:
-                    # j's concentration too large for i, fail
-                    raise Exception(f"concentration at {j}-th row is too large ({idx_to_concentration[j]})")
-                elif (idx_to_volume[j] / args.minimal_volume) * idx_to_concentration[j] > idx_to_concentration[i]:
+                if (idx_to_concentration[i] > lower_bound) and \
+                        (idx_to_concentration[i] < upper_bound):
                     j_to_i[j] = i
+                    succeed = True
                     break
-            if i == j - 1:
-                raise Exception(f"concentration at {j}-th row is too small ({idx_to_concentration[j]})")
+            if not succeed:
+                raise Exception(f"concentration request {idx_to_concentration[j]} can only be diluted from a solution in range {lower_bound:.2f} to {upper_bound:.2f}, which is not available")
         else:
             # best case scenario, can dilute from original stock solution
             j_to_i[j] = 0
         v_need_dict[j_to_i[j]] += (idx_to_concentration[j] / idx_to_concentration[j_to_i[j]]) * idx_to_volume[j]
         if v_need_dict[j_to_i[j]] > idx_to_volume[j_to_i[j]]:
             # the volume needed for i-th row is larger than the requested volume even after adjusting, fail
-            raise Exception(f"volume needed for {j_to_i[j]}-th row is too large ({v_need_dict[j_to_i[j]]}), try requesting more")
+            raise Exception(f"volume needed for request {idx_to_concentration[j_to_i[j]]} is too large ({v_need_dict[j_to_i[j]]}), try requesting more")
         v_dilute_dict[j] = (idx_to_concentration[j] / idx_to_concentration[j_to_i[j]]) * idx_to_volume[j]
         v_buffer_dict[j] = ((idx_to_concentration[j_to_i[j]] - idx_to_concentration[j]) \
                             / idx_to_concentration[j_to_i[j]]) * idx_to_volume[j]
@@ -94,5 +98,8 @@ if __name__ == "__main__":
     output_df.at[0, "volume"] = v_need_dict[0]
 
     # save to file
-    output_path = os.path.splitext(args.file_path)[0] + "_output.csv"
-    output_df.to_csv(output_path)
+    if args.no_file_saving:
+        print(output_df)
+    else:
+        output_path = os.path.splitext(args.file_path)[0] + "_output.csv"
+        output_df.to_csv(output_path)

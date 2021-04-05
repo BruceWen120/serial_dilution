@@ -3,7 +3,8 @@ import pandas as pd
 
 def load_data_and_process(file_path, leaway_factor):
     raw_request_df = pd.read_csv(file_path)
-    assert raw_request_df.columns.to_list() == ["concentration", "volume"]
+    assert raw_request_df.columns.to_list() == ["concentration", "volume"], \
+        "csv file should have columns [concentration, volume]"
 
     request_df = raw_request_df.copy()
     request_df["volume"][1:] = leaway_factor * raw_request_df["volume"][1:]
@@ -15,8 +16,10 @@ def load_data_and_process(file_path, leaway_factor):
 
 def check_validity(request_df, vmin):
     sum_series = request_df["concentration"] * request_df["volume"]
-    assert sum_series[0] > sum_series[1:].sum(), "not enough solution"
-    assert all(request_df["volume"] > 2 * vmin)
+    assert sum_series[0] > sum_series[1:].sum(), "not enough solute"
+    for _, row in request_df.iterrows():
+        assert row["volume"] > 2 * vmin, \
+            f"requested volume for {row['concentration']} is too small"
 
 def check_stock_solution(idx_to_concentration, idx_to_volume, vmin):
     min_concentrations = set()

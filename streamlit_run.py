@@ -23,10 +23,18 @@ args["minimal_volume"] = st.number_input("Minimal volume of pipette", value=2.0)
 request_file = st.file_uploader("Upload request csv", type="csv")
 
 if request_file is not None:
-    raw_request_df, request_df, idx_to_concentration, idx_to_volume = \
-        sd.load_data_and_process(request_file, args["leaway_factor"])
+    try:
+        raw_request_df, request_df, idx_to_concentration, idx_to_volume = \
+            sd.load_data_and_process(request_file, args["leaway_factor"])
+    except Exception as exp:
+        st.error(exp)
+        st.stop()
 
-    sd.check_validity(request_df, args["minimal_volume"])
+    try:
+        sd.check_validity(request_df, args["minimal_volume"])
+    except Exception as exp:
+        st.error(exp)
+        st.stop()
 
     try:
         sd.check_stock_solution(idx_to_concentration, idx_to_volume, args["minimal_volume"])
@@ -41,4 +49,11 @@ if request_file is not None:
         st.error(exp)
         st.stop()
 
-    st.dataframe(output_df.style.format("{:.2f}"))
+    st.table(output_df.style.format({
+        "concentration": "{:.2f}",
+        "volume": "{:.2f}",
+        "dilution volume": "{:.2f}",
+        "buffer volume": "{:.2f}",
+        "from": "{:.0f}"
+        }
+        ))

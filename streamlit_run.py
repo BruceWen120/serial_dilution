@@ -41,7 +41,7 @@ example_df = pd.DataFrame({
 
 st.table(example_df)
 
-st.markdown("This template is available [here](https://docs.google.com/spreadsheets/d/1JpemSt7MFDlxafeIetCOiRCtnSNyOIgazHW4hISAZX0/edit?usp=sharing).")
+st.markdown("This template is available [here](https://docs.google.com/spreadsheets/d/1JpemSt7MFDlxafeIetCOiRCtnSNyOIgazHW4hISAZX0/edit?usp=sharing). **Remember to download as a CSV file.**")
 
 st.write("Now upload your request form")
 

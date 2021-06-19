@@ -41,7 +41,7 @@ example_df = pd.DataFrame({
 
 st.table(example_df)
 
-st.markdown("This template is available [here](https://1drv.ms/u/s!AgkVraR8cgATjLoIOeeZb80hCm2edw?download=1).")
+st.markdown("This template is available [here](https://docs.google.com/spreadsheets/d/1JpemSt7MFDlxafeIetCOiRCtnSNyOIgazHW4hISAZX0/edit?usp=sharing).")
 
 st.write("Now upload your request form")
 
